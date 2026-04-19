@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: obg-platform
+  datasource:
+    url: jdbc:h2:file:./data/obgdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update        # Keeps data between restarts
+    show-sql: false
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console       # http://localhost:8090/h2-console
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+server:
+  port: 8090                  # Change if 8090 is taken
+
+jwt:
+  secret: "OBG_PLATFORM_SECRET_KEY_PLEASE_CHANGE_IN_PRODUCTION_MIN32"
+  expiration: 86400000        # 24 hours
+
+upload:
+  dir: uploads/
+
+logging:
+  level:
+    com.obg: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN

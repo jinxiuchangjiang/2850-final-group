@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>OBG – Online Board Games</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="screen active" id="s-login">
+  <div class="topbar"><div class="brand"><img src="icons/gamepad.svg" class="brand-icon" alt="OBG"/>OBG</div></div>
+  <div class="auth-body"><div class="auth-card">
+    <img src="icons/gamepad.svg" class="auth-gp" alt=""/>
+    <h2>WELCOME</h2>
+    <div class="err-bar" id="lerr"></div>
+
+    <form onsubmit="doLogin(); return false;" autocomplete="on">
+      <label for="lu" class="sr-only">Username</label>
+      <input class="auth-input" type="text" id="lu"
+             aria-label="Username" name="username"
+             placeholder="username" autocomplete="username"/>
+      <label for="lp" class="sr-only">Password</label>
+      <input class="auth-input" type="password" id="lp"
+             aria-label="Password" name="password"
+             placeholder="password" autocomplete="current-password"/>
+      <button class="btn-white" onclick="doLogin()">sign in</button>
+    </form>
+
+    <div class="auth-links">No account? <a onclick="go('s-reg')">Register here</a></div>
+    <button class="mgmt-link" onclick="go('s-adlog')">management</button>
+  </div></div>
+</div>
+
+<!-- REGISTER -->
+<div class="screen" id="s-reg">
+  <div class="topbar"><div class="brand"><img src="icons/gamepad.svg" class="brand-icon" alt="OBG"/>OBG</div></div>
+  <div class="auth-body"><div class="auth-card">
+    <img src="icons/gamepad.svg" class="auth-gp" alt=""/>
+    <h2>REGISTER</h2>
+    <div class="err-bar" id="rerr"></div>
+
+    <form onsubmit="doReg(); return false;" autocomplete="on">
+      <label for="rf" class="sr-only">Full Name</label>
+      <input class="auth-input" type="text" id="rf"
+             aria-label="Full name" name="fullName"
+             placeholder="full name" autocomplete="name"/>
+      <label for="ru" class="sr-only">Username</label>
+      <input class="auth-input" type="text" id="ru"
+             aria-label="Username" name="username"
+             placeholder="username" autocomplete="username"/>
+      <label for="re" class="sr-only">Email</label>
+      <input class="auth-input" type="email" id="re"
+             aria-label="Email" name="email"
+             placeholder="email" autocomplete="email"/>
+      <label for="rp" class="sr-only">Password</label>
+      <input class="auth-input" type="password" id="rp"
+             aria-label="Password" name="password"
+             placeholder="password (min 8 chars)" autocomplete="new-password"/>
+      <label for="rp2" class="sr-only">Confirm Password</label>
+      <input class="auth-input" type="password" id="rp2"
+             aria-label="Confirm password" name="confirmPassword"
+             placeholder="confirm password" autocomplete="new-password"/>
+      <button class="btn-white" onclick="doReg()">create account</button>
+    </form>
+
+    <div class="auth-links">Have an account? <a onclick="go('s-login')">Sign in</a></div>
+  </div></div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div class="screen" id="s-adlog">
+  <div class="topbar"><div class="brand"><img src="icons/gamepad.svg" class="brand-icon" alt="OBG"/>OBG</div></div>
+  <div class="auth-body"><div class="auth-card">
+    <img src="icons/shield.svg" class="auth-gp" alt=""/>
+    <h2>MANAGEMENT</h2>
+    <div class="err-bar" id="aerr"></div>
+
+    <form onsubmit="doAdLog(); return false;" autocomplete="on">
+      <label for="au" class="sr-only">Admin Username</label>
+      <input class="auth-input" type="text" id="au"
+             aria-label="Admin username" name="username"
+             placeholder="admin username" autocomplete="username"/>
+      <label for="ap" class="sr-only">Password</label>
+      <input class="auth-input" type="password" id="ap"
+             aria-label="Password" name="password"
+             placeholder="password" autocomplete="current-password"/>
+      <button class="btn-white" onclick="doAdLog()">sign in</button>
+    </form>
+
+    <button class="mgmt-link" onclick="go('s-login')">Back to Player Login</button>
+  </div></div>
+</div>
+
+<!-- PLAYER SCREEN -->
+<div class="screen" id="s-player">
+  <div class="topbar"><div class="brand"><img src="icons/gamepad.svg" class="brand-icon" alt="OBG"/>OBG</div></div>
+  <div class="player-wrap">
+    <aside class="sidebar" id="psb">
+      <div class="sb-av-wrap">
+        <div class="sb-av" id="sbav"><img src="icons/user.svg" alt="user"/></div>
+        <div class="sb-uname" id="sb-uname"></div>
+      </div>
+      <nav class="sb-nav">
+        <button class="nitem active" onclick="pnav('games',this)"><img src="icons/gamepad.svg" class="nicon" alt=""/><span>Games</span></button>
+        <button class="nitem" onclick="pnav('mygames',this)"><img src="icons/heart.svg" class="nicon" alt=""/><span>My Games</span></button>
+        <button class="nitem" onclick="pnav('friends',this)"><img src="icons/friends.svg" class="nicon" alt=""/><span>Friends</span><span class="nbadge" id="rbadge" style="display:none">●</span></button>
+        <button class="nitem" onclick="pnav('profile',this)"><img src="icons/user.svg" class="nicon" alt=""/><span>My Profile</span></button>
+      </nav>
+      <div class="sb-bot"><button class="btn-signout" onclick="doLogout()">sign out</button></div>
+    </aside>
+
+    <div class="main-area" id="pma">
+
+      <!-- GAMES -->
+      <div class="psec active" id="ps-games">
+        <div class="ptitle">Games</div>
+        <div class="fbar">
+
+          <form role="search" onsubmit="return false;">
+            <div class="sbox">
+              <img src="icons/search.svg" class="sicon" alt=""/>
+              <label for="gsrch" class="sr-only">Search games by title or author</label>
+              <input id="gsrch"
+                     aria-label="Search games by title or author" name="q"
+                     placeholder="Search title or author..."
+                     oninput="srchGames(this.value)"/>
+            </div>
+          </form>
+
+          <div class="cpills" id="cpills"></div>
+        </div>
+        <div class="gcnt" id="gcnt"></div>
+        <div class="ggrid" id="ggrid"></div>
+      </div>
+
+      <!-- GAME DETAIL -->
+      <div class="psec" id="ps-det">
+        <button class="back-btn" onclick="showP('ps-games')"><img src="icons/arrow-left.svg" alt=""/>Back to Games</button>
+        <div class="dhero">
+          <div class="dart" id="dart"></div>
+          <div class="dinfo">
+            <h2 id="dtitle"></h2>
+            <div class="dauth" id="dauth"></div>
+            <div class="dtags" id="dtags"></div>
+            <div class="dstats">
+              <div class="ds"><div class="val" id="ddu"></div><div class="lbl">Duration</div></div>
+              <div class="ds"><div class="val" id="dag"></div><div class="lbl">Min Age</div></div>
+            </div>
+            <p class="ddesc" id="ddesc"></p>
+            <div class="dbtns">
+              <button class="btn-green" onclick="openRooms()"><img src="icons/play.svg" alt=""/> Play</button>
+              <button class="btn-green-out" id="likebtn" onclick="toggleLike()"><img src="icons/heart.svg" alt=""/> Like</button>
+            </div>
+          </div>
+        </div>
+        <div class="dsec"><h3>Game Rules</h3><div id="drules"></div></div>
+      </div>
+
+      <!-- ROOMS -->
+      <div class="psec" id="ps-rooms">
+        <button class="back-btn" onclick="showP('ps-det')"><img src="icons/arrow-left.svg" alt=""/>Back to Game</button>
+        <div class="rh">
+          <div><div class="ptitle" id="rgtitle" style="margin-bottom:3px">Rooms</div><div class="rsub">Join or create a room</div></div>
+          <button class="btn-green" onclick="openMod('mc-room')"><img src="icons/plus.svg" alt=""/> Create Room</button>
+        </div>
+        <div class="rg" id="rgrid"></div>
+      </div>
+
+      <!-- ROOM LOBBY — no host Start button; game starts automatically when all ready -->
+      <div class="psec" id="ps-ri">
+        <button class="back-btn" onclick="leaveRoomBack()"><img src="icons/arrow-left.svg" alt=""/>Leave Room</button>
+        <div class="ri-card">
+          <h2 id="riname"></h2>
+          <div id="risub" class="risub"></div>
+          <div id="lobby-status" class="lobby-status-msg"></div>
+          <div class="dstats" style="margin:12px 0">
+            <div class="ds"><div class="val" id="ripl"></div><div class="lbl">Players</div></div>
+            <div class="ds"><div class="val" id="ristat"></div><div class="lbl">Status</div></div>
+            <div class="ds"><div class="val" id="ripriv"></div><div class="lbl">Privacy</div></div>
+          </div>
+          <div class="ri-label">Players <span style="font-weight:400;color:#aaa;font-size:.8rem">(UIDs shown when game starts)</span></div>
+          <div class="pslots" id="pslots"></div>
+          <div class="room-actions" style="margin-top:16px">
+            <button id="readyBtn" class="btn-grey bsm" onclick="toggleReady()">Ready</button>
+            <button class="btn-red bsm" onclick="leaveRoomBack()">Leave Room</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- IN GAME -->
+      <div class="psec" id="ps-ingame">
+        <div class="ri-card" style="max-width:none">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <h2 id="ig-title">Game</h2>
+            <button id="resignBtn" class="btn-red bsm" onclick="wsResign()">Resign</button>
+          </div>
+          <div class="ri-label" style="margin-bottom:10px">Players (UIDs visible in-game)</div>
+          <div class="pslots" id="ig-slots"></div>
+          <div id="game-loading" class="game-loading">
+            <div class="game-loading-spinner"></div>
+            <div class="game-loading-text" id="game-loading-text">Loading game...</div>
+          </div>
+          <div style="margin-top:16px">
+            <iframe id="game-iframe" class="game-iframe" allow="fullscreen"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY GAMES -->
+      <div class="psec" id="ps-mygames">
+        <div class="ptitle">My Games</div>
+        <div class="mgtabs">
+          <button class="mgtab active" onclick="mgTab('liked',this)"><img src="icons/heart.svg" alt=""/> Liked Games</button>
+          <button class="mgtab" onclick="mgTab('hist',this)"><img src="icons/clock.svg" alt=""/> Play History</button>
+        </div>
+        <div class="mgpane active" id="mg-liked">
+          <div class="fbar">
+
+            <form role="search" onsubmit="return false;">
+              <div class="sbox">
+                <img src="icons/search.svg" class="sicon" alt=""/>
+                <label for="liked-srch" class="sr-only">Search liked games</label>
+                <input id="liked-srch"
+                       type="search" name="q"
+
+                       placeholder="Search liked games..."
+                       oninput="srchLiked(this.value)" autocomplete="off"/>
+              </div>
+            </form>
+
+          </div>
+          <div class="ggrid" id="lgrid"></div>
+        </div>
+        <div class="mgpane" id="mg-hist"><div id="hlist"></div></div>
+      </div>
+
+      <!-- FRIENDS -->
+      <div class="psec" id="ps-friends">
+        <div class="friends-topbar">
+          <div class="ptitle" style="margin-bottom:0">Friends</div>
+          <div class="fr-topbtns">
+            <button class="fr-icon-btn" onclick="showFriendRequests()" title="Incoming Requests">
+              <img src="icons/bell.svg" alt=""/><span class="notif-dot" id="notif-dot" style="display:none"></span>
+            </button>
+            <button class="fr-icon-btn" onclick="openMod('m-adduid')" title="Add Friend by UID">
+              <img src="icons/add-friend.svg" alt=""/>
+            </button>
+          </div>
+        </div>
+        <div class="fr-search-row">
+
+          <form role="search" onsubmit="return false;">
+            <div class="fr-sbox">
+              <img src="icons/search.svg" class="sicon" alt=""/>
+              <label for="frsrch" class="sr-only">Search friends</label>
+              <input id="frsrch"
+                     aria-label="Search friends" name="q"
+                     placeholder="Search friends..."
+                     oninput="srchFriends(this.value)"/>
+            </div>
+          </form>
+
+        </div>
+        <div id="inv-banner" class="inv-banner" style="display:none">
+          <span id="inv-banner-text"></span>
+          <button class="btn-green bsm" onclick="inviteAllOnlineFriends()">Invite Online Friends</button>
+        </div>
+        <div id="frlist-cards"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="psec" id="ps-profile">
+        <div class="ptitle">My Profile</div>
+        <div class="ccard"><div class="ccard-head">
+          <div class="pu-av" id="puav"><img src="icons/user.svg" alt=""/></div>
+          <div><h3 id="puname">Player</h3><div class="csub" id="puuid">UID-0000</div></div>
+        </div></div>
+        <div class="ccard">
+          <div class="csec-title">Account Information
+            <button class="btn-green bsm" onclick="openEditProfile()"><img src="icons/edit.svg" alt=""/> Edit Profile</button>
+          </div>
+          <div class="irow"><span class="ilbl">Full Name</span><span class="ival" id="piname">—</span></div>
+          <div class="irow"><span class="ilbl">Username</span><span class="ival" id="piuname">—</span></div>
+          <div class="irow"><span class="ilbl">Email</span><span class="ival" id="piemail">—</span></div>
+          <div class="irow"><span class="ilbl">Registered</span><span class="ival" id="pireg">—</span></div>
+          <div class="irow"><span class="ilbl">Account Type</span><span class="ival"><span class="tbadge" id="pitype">Player</span></span></div>
+        </div>
+        <div class="ccard">
+          <div class="csec-title">Security
+            <button class="btn-grey bsm" onclick="openMod('m-chpw')"><img src="icons/lock.svg" alt=""/> Change Password</button>
+          </div>
+          <div class="irow"><span class="ilbl">Password</span><span class="ival pw-dots">••••••••</span></div>
+        </div>
+        <div class="ccard danger-card">
+          <div class="csec-title danger-title">Danger Zone</div>
+          <div class="danger-row">
+            <div><div class="danger-label">Delete Account</div><div class="danger-desc">Permanently removes your account and all data.</div></div>
+            <button class="btn-red bsm" onclick="openMod('m-delacc')"><img src="icons/trash.svg" alt=""/> Delete</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN SCREEN -->
+<div class="screen" id="s-admin">
+  <div class="topbar admin-topbar"><div class="brand admin-brand"><img src="icons/gamepad.svg" class="brand-icon" alt="OBG"/>OBG <span class="admin-tag">Admin</span></div></div>
+  <div class="awrap">
+    <aside class="asidebar">
+      <div class="asb-section-lbl">Management</div>
+      <nav class="sb-nav">
+        <button class="nitem active" onclick="anav('adash',this)"><img src="icons/dashboard.svg" class="nicon" alt=""/><span>Dashboard</span></button>
+        <button class="nitem" onclick="anav('agames',this)"><img src="icons/gamepad.svg" class="nicon" alt=""/><span>Games</span></button>
+        <button class="nitem" onclick="anav('ausers',this)"><img src="icons/users.svg" class="nicon" alt=""/><span>Users</span></button>
+        <button class="nitem" onclick="anav('acats',this)"><img src="icons/tag.svg" class="nicon" alt=""/><span>Tags</span></button>
+        <button class="nitem" onclick="anav('asettings',this)"><img src="icons/settings.svg" class="nicon" alt=""/><span>Settings</span></button>
+      </nav>
+      <div class="sb-bot"><button class="btn-signout" onclick="doLogout()">sign out</button></div>
+    </aside>
+    <div class="amain">
+      <div class="psec active" id="as-adash">
+        <div class="atitle">Dashboard</div>
+        <div class="scards">
+          <div class="sc scg"><div class="slbl">Total Games</div><div class="sval" id="asgames">—</div><div class="schg">In library</div></div>
+          <div class="sc scb"><div class="slbl">Total Users</div><div class="sval" id="asusers">—</div><div class="schg">Registered</div></div>
+          <div class="sc scy"><div class="slbl">Active Users</div><div class="sval" id="asactive">—</div><div class="schg">Not banned</div></div>
+          <div class="sc scr"><div class="slbl">Active Rooms</div><div class="sval" id="asrooms">—</div><div class="schg">Right now</div></div>
+        </div>
+        <div class="chartrow">
+          <div class="cchart"><h3>Games by Tag</h3>
+            <div class="pwrap"><canvas id="piechart" width="140" height="140"></canvas><div class="pleg" id="pileg"></div></div></div>
+          <div class="cchart"><h3>New Players — Last 30 Days</h3><div style="height:200px;position:relative"><canvas id="linechart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="psec" id="as-agames">
+        <div class="atitle">Games</div>
+        <div class="dtable">
+          <div class="dth"><h3>Game Library</h3>
+            <div class="dth-actions">
+
+              <form role="search" onsubmit="return false;">
+                <div class="asearch">
+                  <img src="icons/search.svg" alt=""/>
+                  <label for="admin-gsrch"
+                         class="sr-only">Search games</label>
+                  <input id="admin-gsrch"
+                         aria-label="Search games"
+                         placeholder="Search games..."
+                         oninput="asr_games(this.value)"/>
+                </div>
+              </form>
+
+              <button class="btn-dark" onclick="openAddGameModal()"><img src="icons/plus.svg" alt=""/> Add Game</button>
+            </div>
+          </div>
+          <table><thead><tr><th>Cover</th><th>Title</th><th>Author</th><th>Tags</th><th>Actions</th></tr></thead>
+            <tbody id="agtb"></tbody></table>
+        </div>
+      </div>
+      <div class="psec" id="as-ausers">
+        <div class="atitle">Users</div>
+        <div class="dtable">
+          <div class="dth">
+            <h3>User Management</h3>
+            <form role="search" onsubmit="return false;">
+              <div class="asearch">
+                <img src="icons/search.svg" alt=""/>
+                <label for="admin-usrch" class="sr-only">Search users by name, email or UID</label>
+                <input id="admin-usrch"
+                       aria-label="Search users by name, email or UID"
+                       placeholder="Search name, email, UID..."
+                       oninput="asr_users(this.value)"/>
+              </div>
+            </form>
+          </div>
+          <table><thead><tr><th>Name</th><th>UID</th><th>Email</th><th>Registered</th><th>Status</th><th>Online</th><th>Actions</th></tr></thead>
+            <tbody id="autb"></tbody></table>
+        </div>
+      </div>
+      <div class="psec" id="as-acats">
+        <div class="admin-page-header">
+          <div class="atitle" style="margin-bottom:0">Tags</div>
+          <button class="btn-dark" onclick="openAddTagModal()"><img src="icons/plus.svg" alt=""/> Add Tag</button>
+        </div>
+        <div class="dtable">
+          <table><thead><tr><th>Tag Name</th><th>Description</th><th>Actions</th></tr></thead>
+            <tbody id="acattb"></tbody></table>
+        </div>
+      </div>
+      <div class="psec" id="as-asettings">
+        <div class="atitle">Settings</div>
+        <div class="ccard" style="max-width:500px">
+          <div class="csec-title">Admin Security
+            <button class="btn-grey bsm" onclick="openMod('m-admin-chpw')"><img src="icons/lock.svg" alt=""/> Change Password</button>
+          </div>
+          <div class="irow"><span class="ilbl">Admin Username</span><span class="ival" id="asAdminName">admin</span></div>
+          <div class="irow"><span class="ilbl">Password</span><span class="ival pw-dots">••••••••</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="moverlay" id="m-editp"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-editp')">x</button>
+  <h3>Edit Profile</h3>
+
+  <form onsubmit="saveProf(); return false;" autocomplete="on">
+    <label for="epname">Full Name</label>
+    <input type="text" id="epname"
+           aria-label="Full Name"
+           name="fullName" autocomplete="name"/>
+    <label for="epemail">Email</label>
+    <input type="email" id="epemail"
+           aria-label="Email"
+           name="email" autocomplete="email"/>
+    <div class="mact">
+      <button type="button" class="btn-grey" onclick="closeMod('m-editp')">Cancel</button>
+      <button type="submit" class="btn-green">Save Changes</button>
+    </div>
+  </form>
+
+</div></div>
+
+<div class="moverlay" id="m-chpw"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-chpw')">x</button>
+
+  <h3>Change Password</h3>
+
+  <div class="err-bar" id="pwerr" style="display:none">Error.</div>
+
+  <form onsubmit="chPw(); return false;" autocomplete="on">
+    <label for="cpold">Current Password</label>
+    <input type="password" id="cpold"
+           aria-label="Current Password"
+           name="currentPassword" placeholder="Enter current password"
+           autocomplete="current-password"/>
+    <label for="cpnew">New Password</label>
+    <input type="password" id="cpnew"
+           aria-label="New Password"
+           name="newPassword" placeholder="Min 8 characters"
+           autocomplete="new-password" oninput="pwStr(this.value,'pwbar')"/>
+    <div class="pwbar-wrap"><div class="pwbar" id="pwbar"></div></div>
+    <label for="cpnew2">Confirm New Password</label>
+    <input type="password" id="cpnew2"
+           aria-label="Confirm New Password"
+           name="confirmPassword" placeholder="Repeat new password"
+           autocomplete="new-password"/>
+    <div class="mact">
+      <button type="button" class="btn-grey" onclick="closeMod('m-chpw')">Cancel</button>
+      <button type="submit" class="btn-green">Update Password</button>
+    </div>
+  </form>
+
+</div></div>
+
+<div class="moverlay" id="m-admin-chpw"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-admin-chpw')">x</button>
+
+  <h3>Change Admin Password</h3>
+
+  <form onsubmit="adminChPw(); return false;" autocomplete="on">
+    <label for="acpold">Current Password</label>
+    <input type="password" id="acpold"
+           aria-label="Current password"
+           name="currentPassword" autocomplete="current-password"/>
+    <label for="acpnew">New Password</label>
+    <input type="password" id="acpnew"
+           aria-label="New password"
+           name="newPassword" autocomplete="new-password"
+           oninput="pwStr(this.value,'pwbar2')"/>
+    <div class="pwbar-wrap"><div class="pwbar" id="pwbar2"></div></div>
+    <label for="acpnew2">Confirm New Password</label>
+    <input type="password" id="acpnew2"
+           aria-label="Confirm new password"
+           name="confirmPassword" autocomplete="new-password"/>
+    <div class="mact">
+      <button type="button" class="btn-grey" onclick="closeMod('m-admin-chpw')">Cancel</button>
+      <button type="submit" class="btn-green">Update Password</button>
+    </div>
+  </form>
+
+</div></div>
+
+<div class="moverlay" id="m-delacc"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-delacc')">x</button>
+  <h3>Delete Account</h3>
+  <p class="modal-desc">This permanently deletes your account, liked games, friends, and play history.</p>
+  <div class="mact"><button class="btn-grey" onclick="closeMod('m-delacc')">Cancel</button><button class="btn-red" onclick="deleteMyAccount()">Delete My Account</button></div>
+</div></div>
+
+<div class="moverlay" id="mc-room"><div class="modal">
+  <button class="mclose" onclick="closeMod('mc-room')">x</button>
+
+  <h3>Create Room</h3>
+
+  <form onsubmit="createRoom(); return false;" autocomplete="on">
+    <label for="crname">Room Name</label>
+    <input type="text" id="crname"
+           aria-label="Room Name"
+           name="roomName" placeholder="My Room" autocomplete="off"/>
+    <label for="crpriv">Privacy</label>
+    <select id="crpriv" name="privacy" onchange="tglRoomPw(this.value)">
+      <option value="PUBLIC">Public — anyone can join</option>
+      <option value="PRIVATE">Private — password required</option>
+    </select>
+    <div id="crpwg" style="display:none">
+      <label for="crpw">Room Password</label>
+      <input type="password" id="crpw"
+             aria-label="Room Password"
+             name="roomPassword" placeholder="Set a password"
+             autocomplete="new-password"/>
+    </div>
+    <div class="mact">
+      <button type="button" class="btn-grey" onclick="closeMod('mc-room')">Cancel</button>
+      <button type="submit" class="btn-green">Create Room</button>
+    </div>
+  </form>
+
+</div></div>
+
+<div class="moverlay" id="m-joinp"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-joinp')">x</button>
+
+  <h3>Private Room</h3>
+
+  <p class="modal-desc">This room is password-protected.</p>
+  <form onsubmit="joinPriv(); return false;" autocomplete="on">
+    <label for="jppw">Room Password</label>
+    <input type="password" id="jppw"
+           aria-label="Room Password"
+           name="roomPassword"
+           placeholder="Enter room password"
+           autocomplete="current-password"/>
+    <div class="mact">
+      <button type="button" class="btn-grey" onclick="closeMod('m-joinp')">Cancel</button>
+      <button type="submit" class="btn-green">Join Room</button>
+    </div>
+  </form>
+
+</div></div>
+
+<div class="moverlay" id="m-notifs"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-notifs')">x</button>
+  <h3>Friend Requests</h3>
+  <div id="notif-list"></div>
+  <div class="mact"><button class="btn-grey" onclick="closeMod('m-notifs')">Close</button></div>
+</div></div>
+
+<div class="moverlay" id="m-adduid"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-adduid')">x</button>
+  <h3>Add Friend by UID</h3>
+  <p class="modal-desc">Enter the player's UID to send a friend request. They will see a pending notification.</p>
+  <form onsubmit="addFr(); return false;" autocomplete="off">
+    <label for="adduid">Player UID</label>
+    <input type="text" id="adduid"
+           aria-label="Player UID"
+           name="playerUid" placeholder="e.g. UID-0000-0000"/>
+    <div class="mact">
+      <button type="button" class="btn-grey" onclick="closeMod('m-adduid')">Cancel</button>
+      <button type="submit" class="btn-green">Send Request</button>
+    </div>
+  </form>
+</div></div>
+
+<!-- ADD GAME — PDF upload removed -->
+<div class="moverlay" id="m-addgame"><div class="modal modal-lg">
+  <button class="mclose" onclick="closeMod('m-addgame')">x</button>
+
+  <h3>Add New Game</h3>
+
+  <form onsubmit="addGame(); return false;" autocomplete="off">
+    <div class="game-form-layout">
+      <div class="cover-upload-col">
+        <div class="cover-label">COVER IMAGE</div>
+        <div class="uparea" onclick="document.getElementById('agimg').click()">
+          <div id="agimgprev"><img src="icons/image.svg" style="width:36px;opacity:.4" alt=""/></div>
+          <p>Click to upload</p>
+          <input type="file" id="agimg"
+                 accept="image/*"
+                 aria-label="Upload cover image" style="display:none" onchange="prevCover(this,'agimgprev')"/>
+        </div>
+      </div>
+      <div class="game-form-fields">
+        <div class="mgrid">
+          <label for="agtitle">Game Title</label>
+          <input type="text" id="agtitle"
+                 aria-label="Game Title"
+                 name="title" placeholder="e.g. Chess"/>
+          <label for="agauth">Author</label>
+          <input type="text" id="agauth"
+                 aria-label="Author"
+                 name="author" placeholder="e.g. Traditional"/>
+          <label for="agdur">Duration (min)</label>
+          <input type="number" id="agdur"
+                 aria-label="Duration"
+                 name="duration" placeholder="60"/>
+          <label for="agage">Minimum Age</label>
+          <input type="number" id="agage"
+                 aria-label="Minimum Age"
+                 name="minAge" placeholder="8"/>
+        </div>
+        <label for="agdesc">Description</label>
+        <textarea id="agdesc" name="description"
+                  rows="2" placeholder="Brief description..."></textarea>
+        <div class="mg">
+          <label>Tags <span class="tag-hint">(click to select, or type custom)</span></label>
+          <div class="tag-selector" id="ag-tag-sel"></div>
+          <div class="tag-input-row">
+            <label for="ag-custom-tag" class="sr-only">Custom tag</label>
+            <input type="text" id="ag-custom-tag"
+                   aria-label="Custom tag"
+                   name="customTag"
+                   placeholder="Custom tag..."/>
+            <button type="button" class="btn-grey bsm" onclick="addCustomTag('ag')">Add</button>
+          </div>
+          <div class="selected-tags" id="ag-selected-tags"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mg">
+      <label>Game Rules <span class="tag-hint">(Rich Editor)</span></label>
+      <div class="rtbar">
+        <button class="rtb" onclick="rtc('agrules','bold')"><b>B</b></button>
+        <button class="rtb" onclick="rtc('agrules','italic')"><i>I</i></button>
+        <button class="rtb" onclick="rtc('agrules','underline')"><u>U</u></button>
+        <button class="rtb" onclick="rtc('agrules','insertUnorderedList')">List</button>
+        <button class="rtb" onclick="rtc('agrules','insertOrderedList')">1.List</button>
+        <button class="rtb" onclick="rtc('agrules','formatBlock','h3')">H3</button>
+        <button class="rtb" onclick="rtc('agrules','undo')">Undo</button>
+      </div>
+      <div class="rtedit" id="agrules" contenteditable="true" data-ph="Write game rules here..."></div>
+    </div>
+    <div class="file-row">
+      <div>
+        <div class="file-lbl-text">GAME FILE <span class="tag-hint">(.html — runs in browser)</span></div>
+        <label class="flbl"><img src="icons/folder.svg" alt=""/> Upload Game File<input type="file" id="agfile" accept=".html,.htm" onchange="fnChosen(this,'agfn')"/></label>
+        <div id="agfn" class="file-name"></div>
+      </div>
+    </div>
+    <div class="mact"><button type="button" class="btn-grey" onclick="closeMod('m-addgame')">Cancel</button><button type="submit" class="btn-green">Save Game</button></div>
+  </form>
+</div></div>
+
+<!-- EDIT GAME — PDF upload removed -->
+<div class="moverlay" id="m-editgame"><div class="modal modal-lg">
+  <button class="mclose" onclick="closeMod('m-editgame')">x</button>
+
+  <h3>Edit Game</h3>
+
+  <form onsubmit="saveEditGame(); return false;" autocomplete="off">
+    <div class="game-form-layout">
+      <div class="cover-upload-col">
+        <div class="cover-label">COVER IMAGE</div>
+        <div class="uparea" onclick="document.getElementById('egimg').click()">
+          <div id="egimgprev"><img src="icons/image.svg" style="width:36px;opacity:.4" alt=""/></div>
+          <p>Click to change</p>
+          <input type="file" id="egimg" accept="image/*" aria-label="Upload cover image" style="display:none" onchange="prevCover(this,'egimgprev')"/>
+        </div>
+      </div>
+      <div class="game-form-fields">
+        <div class="mgrid">
+          <label for="egtitle">Game Title</label>
+          <input type="text" id="egtitle"
+                 aria-label="Game Title"
+                 name="title"/>
+          <label for="egauth">Author</label>
+          <input type="text" id="egauth"
+                 aria-label="Author"
+                 name="author"/>
+          <label for="egdur">Duration (min)</label>
+          <input type="number" id="egdur"
+                 aria-label="Duration in minutes"
+                 name="duration"/>
+          <label for="egage">Minimum Age</label>
+          <input type="number" id="egage"
+                 aria-label="Minimum Age"
+                 name="minAge"/>
+        </div>
+        <label for="egdesc">Description</label>
+        <textarea id="egdesc" name="description" rows="2"></textarea>
+        <div class="mg">
+          <label>Tags</label>
+          <div class="tag-selector" id="eg-tag-sel"></div>
+          <div class="tag-input-row">
+            <label for="eg-custom-tag" class="sr-only">Custom tag</label>
+            <input type="text" id="eg-custom-tag"
+                   aria-label="Custom tag"
+                   name="customTag"
+                   placeholder="Custom tag..."/>
+            <button type="button" class="btn-grey bsm" onclick="addCustomTag('eg')">Add</button>
+          </div>
+          <div class="selected-tags" id="eg-selected-tags"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mg">
+      <label>Game Rules <span class="tag-hint">(Rich Editor)</span></label>
+      <div class="rtbar">
+        <button class="rtb" onclick="rtc('egrules','bold')"><b>B</b></button>
+        <button class="rtb" onclick="rtc('egrules','italic')"><i>I</i></button>
+        <button class="rtb" onclick="rtc('egrules','underline')"><u>U</u></button>
+        <button class="rtb" onclick="rtc('egrules','insertUnorderedList')">List</button>
+        <button class="rtb" onclick="rtc('egrules','insertOrderedList')">1.List</button>
+        <button class="rtb" onclick="rtc('egrules','formatBlock','h3')">H3</button>
+        <button class="rtb" onclick="rtc('egrules','undo')">Undo</button>
+      </div>
+      <div class="rtedit" id="egrules" contenteditable="true"></div>
+    </div>
+    <div class="file-row">
+      <div>
+        <div class="file-lbl-text">GAME FILE <span class="tag-hint">(replace)</span></div>
+        <label class="flbl"><img src="icons/folder.svg" alt=""/> Upload Game File<input type="file" id="egfile" accept=".html,.htm" onchange="fnChosen(this,'egfn')"/></label>
+        <div id="egfn" class="file-name"></div>
+      </div>
+    </div>
+    <input type="hidden" id="egidx"/>
+    <div class="mact"><button type="button" class="btn-grey" onclick="closeMod('m-editgame')">Cancel</button><button type="submit" class="btn-green">Save Changes</button></div>
+  </form>
+</div></div>
+
+<!-- ADD/EDIT TAG -->
+<div class="moverlay" id="m-addcat"><div class="modal">
+  <button class="mclose" onclick="closeMod('m-addcat')">x</button>
+  <h3 id="cat-modal-title">Add New Tag</h3>
+  <form onsubmit="saveCat(); return false;" autocomplete="off">
+    <input type="hidden" id="cat-edit-id"/>
+    <label for="ncn">Tag Name</label>
+    <input type="text" id="ncn"
+           aria-label="Tag Name"
+           name="tagName"
+           placeholder="e.g. Card Game, 2-4 Players"/>
+    <label for="ncdesc">Description</label>
+    <input type="text" id="ncdesc"
+           aria-label="Tag Description"
+           name="tagDescription"
+           placeholder="Brief description"/>
+    <div class="mact">
+      <button type="button" class="btn-grey" onclick="closeMod('m-addcat')">Cancel</button>
+      <button type="submit" class="btn-dark">Save Tag</button>
+    </div>
+  </form>
+</div></div>
+
+<!-- Game Over — only Return to Lobby (no Leave Room option post-game) -->
+<div class="moverlay" id="m-gameover">
+  <div class="modal" style="text-align:center;max-width:400px">
+    <div id="go-icon" style="font-size:3rem;margin-bottom:8px"></div>
+    <h2 id="go-title" style="font-size:1.6rem;margin-bottom:6px"></h2>
+    <p id="go-sub" style="color:#888;margin-bottom:24px"></p>
+    <button class="btn-green" style="width:100%" onclick="goReturnLobby()">Return to Lobby</button>
+  </div>
+</div>
+
+<!-- Incoming invite -->
+<div class="moverlay" id="m-invite">
+  <div class="modal" style="text-align:center;max-width:400px">
+    <h3 id="inv-title">Game Invite</h3>
+    <p id="inv-body" style="color:#555;margin:12px 0 24px"></p>
+    <div class="mact" style="justify-content:center">
+      <button class="btn-grey" onclick="declineInvite()">Decline</button>
+      <button class="btn-green" onclick="acceptInvite()">Join Room</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
