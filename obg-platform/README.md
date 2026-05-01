@@ -1,10 +1,10 @@
 # OBG — Online Board Games Platform
 
-A real, locally-deployable board game platform with:
-- **Real-time Gomoku (五子棋)** multiplayer via WebSocket
+A board game platform with:
+- multiplayer via WebSocket
 - Admin panel for managing games, users, tags
 - User accounts, friends system, play history
-- File uploads (game covers, rule PDFs)
+- File uploads (game covers)
 - Persistent H2 database (data survives restarts)
 
 ---
@@ -37,7 +37,7 @@ Players register themselves from the login page.
 
 ### 3 — Play Gomoku Online
 1. Two players log in (different browsers / tabs)
-2. Click **Games → Gomoku (五子棋)**
+2. Click **Games → Gomoku**
 3. Click **▶ Play Online**
 4. One player creates a room; the other joins
 5. The game starts automatically when both are connected
