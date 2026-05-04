@@ -8,7 +8,7 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: create        # Keeps data between restarts
+      ddl-auto: update        # Keeps data between restarts
     show-sql: false
     open-in-view: false
   h2:
