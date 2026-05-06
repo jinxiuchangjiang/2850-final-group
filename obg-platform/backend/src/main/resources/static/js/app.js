@@ -337,7 +337,7 @@ function fillLobby(r) {
 
     const myPlayer  = r.players.find(p => p.username === currentUser.username);
     const iAmReady  = myPlayer?.isReady || false;
-    const allReady  = r.players.length >= 2 && r.players.every(p => p.isReady);
+    const allReady  = r.players.length >= r.maxPlayers && r.players.every(p => p.isReady);
 
     // Status message
     const statusEl = document.getElementById('lobby-status');
