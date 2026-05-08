@@ -2,8 +2,11 @@
 
 >**OBG — Online Board Games Platform** —— A full-stack web platform where players can browse board games, create multiplayer rooms, play games live in the browser, track their match history, and manage a friends list.
 
-
-
+## Team Members
+Haoyan Xing
+Yifan Ba
+Jincheng Zhou
+Fariya Achhab
 
 ## Core Function
 **For Players:**
