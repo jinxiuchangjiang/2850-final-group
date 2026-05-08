@@ -4,8 +4,11 @@
 
 ## Team Members
 Haoyan Xing
+
 Yifan Ba
+
 Jincheng Zhou
+
 Fariya Achhab
 
 ## Core Function
