@@ -2,6 +2,9 @@
 
 >**OBG — Online Board Games Platform** —— A full-stack web platform where players can browse board games, create multiplayer rooms, play games live in the browser, track their match history, and manage a friends list.
 
+
+
+
 ## Core Function
 **For Players:**
 | Functional Module | Description |
@@ -99,14 +102,3 @@ The server starts on **http://localhost:8090**
 5. Players can like it and play online if you wire up WebSocket for it
 
 > Gomoku is the only playable game included. You can add other HTML5 games by uploading their files and adding a room-based launcher (same WebSocket pattern).
-
-
-## Personal stories
-
-![alt text](persona_image/admin1.png)
-
-![alt text](persona_image/admin2.png)
-
-![alt text](persona_image/user1.png)
-
-![alt text](persona_image/user2.png)

@@ -207,7 +207,9 @@ function handleMsg(msg) {
 
     case 'ROOM_READY': {
       startTimeMs = msg.startTimeMs || Date.now();
-      (msg.players || []).forEach((p, i) => { playerColors[p.uid] = i + 1; });
+      const orderedPlayers = [...(msg.players || [])];
+      if (startTimeMs % 2 === 1) orderedPlayers.reverse();
+      orderedPlayers.forEach((p, i) => { playerColors[p.uid] = i + 1; });
       myColor = playerColors[myUid] || 1;
       gameStatus = 'PLAYING';
       currentPlayer = 1;
@@ -215,7 +217,6 @@ function handleMsg(msg) {
 
       (msg.players || []).forEach(p => {
         const color = playerColors[p.uid];
-        // relay 的 name 字段 = fullName || username
         const label = p.name + (p.uid === myUid ? ' (You)' : '');
         if (color === 1) document.getElementById('p1-name').textContent = label;
         if (color === 2) document.getElementById('p2-name').textContent = label;
