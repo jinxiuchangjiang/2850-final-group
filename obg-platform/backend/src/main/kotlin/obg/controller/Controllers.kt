@@ -151,7 +151,6 @@ class GameController(private val gameRepo: GameRepository) {
         .map { ResponseEntity.ok(ApiResponse(true, data = it.toDto())) }
         .orElse(ResponseEntity.notFound().build())
 
-    // ✅ tags 现在是 Set<Tag>，直接映射出名称列表
     fun Game.toDto() = GameDto(id, title, author, description, rules, coverImageUrl,
         gameFileUrl, durationMinutes, minimumAge,  maxPlayers, tags.map { it.name })
 }
@@ -160,12 +159,15 @@ class GameController(private val gameRepo: GameRepository) {
 @RestController @RequestMapping("/api/admin/games")
 class AdminGameController(
     private val gameRepo: GameRepository,
-    private val tagRepo: TagRepository,      // ✅ 新增注入
-    private val uploadService: UploadService
+    private val tagRepo: TagRepository,
+    private val uploadService: UploadService,
+    private val likedRepo: LikedGameRepository,
+    private val histRepo: PlayHistoryRepository,
+    private val roomPlayerRepo: RoomPlayerRepository,
+    private val roomRepo: GameRoomRepository
 ) {
     @PostMapping
     fun create(@RequestBody req: CreateGameRequest): ResponseEntity<ApiResponse<GameDto>> {
-        // ✅ 根据名称列表查出 Tag 实体
         val tagEntities = tagRepo.findAllByNameIn(req.tags).toMutableSet()
         val g = gameRepo.save(Game(
             title = req.title, author = req.author,
@@ -185,9 +187,9 @@ class AdminGameController(
         req.description?.let { g.description = it }; req.rules?.let { g.rules = it }
         req.durationMinutes?.let { g.durationMinutes = it }
         req.minimumAge?.let { g.minimumAge = it }
-        req.maxPlayers?.let { g.maxPlayers = it } // ← 新增
+        req.maxPlayers?.let { g.maxPlayers = it }
 
-        // ✅ 替换为 Tag 实体集合
+
         req.tags?.let { g.tags = tagRepo.findAllByNameIn(it).toMutableSet() }
         g.updatedAt = LocalDateTime.now()
         return ResponseEntity.ok(ApiResponse(true, "Updated", gameRepo.save(g).toDto()))
@@ -210,9 +212,15 @@ class AdminGameController(
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     fun delete(@PathVariable id: Long): ResponseEntity<ApiResponse<Unit>> {
         val g = gameRepo.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
         uploadService.deleteFile(g.coverImageUrl); uploadService.deleteFile(g.gameFileUrl)
+        // Clear all FK references before deleting the game
+        likedRepo.deleteAllByGameId(id)
+        histRepo.deleteAllByGameId(id)
+        roomRepo.findAllByGame_Id(id).forEach { room -> roomPlayerRepo.deleteAllByRoomId(room.id) }
+        roomRepo.deleteAll(roomRepo.findAllByGame_Id(id))
         gameRepo.deleteById(id)
         return ResponseEntity.ok(ApiResponse(true, "Deleted"))
     }

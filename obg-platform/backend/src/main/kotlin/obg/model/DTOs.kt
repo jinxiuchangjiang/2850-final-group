@@ -34,7 +34,7 @@ data class GameDto(
     val gameFileUrl: String?,
     val durationMinutes: Int,
     val minimumAge: Int,
-    val maxPlayers: Int,   // ← 新增
+    val maxPlayers: Int,
     val tags: List<String>)
 
 data class CreateGameRequest(
@@ -44,7 +44,7 @@ data class CreateGameRequest(
     val rules: String,
     val durationMinutes: Int,
     val minimumAge: Int,
-    val maxPlayers: Int = 2,   // ← 新增
+    val maxPlayers: Int = 2,
     val tags: List<String>)
 
 data class UpdateGameRequest(val title: String?, val author: String?, val description: String?,

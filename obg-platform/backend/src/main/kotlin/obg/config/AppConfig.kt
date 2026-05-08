@@ -59,20 +59,23 @@ class DataSeeder(
                 listOf("Strategy", "Two Players", "Board Game", "Quick Play")
             ).toMutableSet()
 
+            val gomokuRules = "<ol>" +
+                "<li><strong>Black plays first.</strong> Players alternate placing one stone per turn.</li>" +
+                "<li>Click any empty intersection on the board to place your stone.</li>" +
+                "<li>The goal is to connect <strong>exactly 5 stones</strong> in a row in any direction.</li>" +
+                "<li>Horizontal, vertical, and diagonal lines all count.</li>" +
+                "<li>You can <strong>Resign</strong> at any time to concede the game.</li>" +
+                "<li>If the board fills up with no winner, the game is a draw.</li>" +
+                "</ol>"
+
             gameRepo.save(Game(
-                title = "Gomoku (五子棋)",
+                title = "Gomoku",
                 author = "Traditional / Classic",
-                description = "A classic two-player strategy board game. Players take turns placing stones on a 15×15 grid. The first player to form an unbroken chain of five stones in a row — horizontally, vertically, or diagonally — wins.",
-                rules = """<ol>
-<li><strong>Black plays first.</strong> Players alternate placing one stone per turn.</li>
-<li>Click any empty intersection on the board to place your stone.</li>
-<li>The goal is to connect <strong>exactly 5 stones</strong> in a row in any direction.</li>
-<li>Horizontal, vertical, and diagonal lines all count.</li>
-<li>You can <strong>Resign</strong> at any time to concede the game.</li>
-<li>If the board fills up with no winner, the game is a draw.</li>
-</ol>""",
+                description = "A classic two-player strategy board game. Players take turns placing stones on a 15x15 grid. The first player to form an unbroken chain of five stones in a row wins.",
+                rules = gomokuRules,
                 durationMinutes = 30,
                 minimumAge = 6,
+                maxPlayers = 2,
                 tags = gomokuTags,
                 gameFileUrl = "/games/gomoku.html"
             ))

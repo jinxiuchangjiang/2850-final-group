@@ -125,7 +125,7 @@ class RoomController(
         if (req.privacy == "PRIVATE" && req.password.isNullOrBlank())
             return ResponseEntity.badRequest().body(ApiResponse(false, "Private rooms require a password"))
         val pwHash = if (req.privacy == "PRIVATE") BCryptPasswordEncoder().encode(req.password) else null
-        // ✅ 删掉 currentPlayers = 1
+    
         val room   = roomRepo.save(GameRoom(game = game, host = host, roomName = req.roomName,
             privacy = RoomPrivacy.valueOf(req.privacy), passwordHash = pwHash,
             maxPlayers = req.maxPlayers))
@@ -145,7 +145,7 @@ class RoomController(
 
         val alreadyMember = roomPlayerRepo.existsByRoom_IdAndUser_Id(id, user.id)
         if (!alreadyMember) {
-            // ✅ 用实时 count 检查房间是否满员
+            // Use real-time count to check if the room is fully occupied
             val currentCount = roomPlayerRepo.countByRoom_Id(id)
             if (currentCount >= room.maxPlayers)
                 return ResponseEntity.badRequest().body(ApiResponse(false, "Room is full"))
@@ -192,11 +192,9 @@ class RoomController(
         val remaining = roomPlayerRepo.findByRoom_Id(id)
 
         if (remaining.isEmpty()) {
-            // ✅ 删掉 currentPlayers = 0
             roomRepo.save(room.copy(status = RoomStatus.CLOSED))
         } else {
             val newHost = if (room.host?.id == user.id) remaining.first().user else room.host
-            // ✅ 删掉 currentPlayers = remaining.size
             roomRepo.save(room.copy(host = newHost, status = RoomStatus.WAITING))
         }
         return ResponseEntity.ok(ApiResponse(true, "Left"))
@@ -212,7 +210,6 @@ class RoomController(
                 isReady  = rp.isReady
             )
         }
-        // ✅ currentPlayers 改为实时查询 room_players 表
         val currentCount = roomPlayerRepo.countByRoom_Id(id).toInt()
         return RoomDto(id, game?.id ?: 0, game?.title ?: "", roomName,
             host?.username ?: "", privacy.name, status.name, currentCount, maxPlayers, players, isMember)
@@ -269,7 +266,7 @@ class LikedGameController(
 class InviteController(
     private val userRepo: UserRepository,
     private val roomRepo: GameRoomRepository,
-    private val roomPlayerRepo: RoomPlayerRepository  // ✅ 新增注入
+    private val roomPlayerRepo: RoomPlayerRepository
 ) {
     companion object {
         val pending = java.util.concurrent.ConcurrentHashMap<String, MutableList<Map<String, Any>>>()
@@ -281,8 +278,8 @@ class InviteController(
         val targetUid = req["targetUid"] ?: return ResponseEntity.badRequest().body(ApiResponse(false, "Missing targetUid"))
         val roomId    = req["roomId"]?.toLongOrNull() ?: return ResponseEntity.badRequest().body(ApiResponse(false, "Missing roomId"))
         val room      = roomRepo.findById(roomId).orElse(null) ?: return ResponseEntity.badRequest().body(ApiResponse(false, "Room not found"))
-        // ✅ 改用实时 count 检查，而不是 currentPlayers 字段
         val currentCount = roomPlayerRepo.countByRoom_Id(roomId)
+        
         if (currentCount >= room.maxPlayers)
             return ResponseEntity.badRequest().body(ApiResponse(false, "Room is full"))
         val invite = mapOf(

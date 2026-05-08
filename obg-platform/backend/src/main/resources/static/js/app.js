@@ -314,6 +314,8 @@ async function joinPriv() {
 async function rejoinLobby(roomId) {
     const res = await api('POST',`/api/rooms/${roomId}/join`,{password:null});
     if (!res.success) { toast(res.message||'Cannot rejoin','err'); return; }
+    const gameId = res.data?.gameId;
+    if (gameId) { const gr = await api('GET',`/api/games/${gameId}`); if (gr.data) { currentGameData=gr.data; currentGameId=gameId; } }
     currentRoomId=roomId; currentRoomData=res.data;
     fillLobby(res.data); showP('ps-ri'); startLobbyPoll();
 }
@@ -321,6 +323,8 @@ async function rejoinLobby(roomId) {
 async function rejoinGame(roomId) {
     const res = await api('POST',`/api/rooms/${roomId}/join`,{password:null});
     if (!res.success) { toast(res.message||'Cannot rejoin','err'); return; }
+    const gameId = res.data?.gameId;
+    if (gameId) { const gr = await api('GET',`/api/games/${gameId}`); if (gr.data) { currentGameData=gr.data; currentGameId=gameId; } }
     currentRoomId=roomId; currentRoomData=res.data; enterGame();
 }
 
@@ -341,7 +345,7 @@ function fillLobby(r) {
 
     // Status message
     const statusEl = document.getElementById('lobby-status');
-    if (r.players.length < 2) {
+    if (r.players.length < r.maxPlayers) {
         statusEl.textContent = 'Waiting for players to join...';
         statusEl.className   = 'lobby-status-msg waiting waiting-pulse';
     } else if (!allReady) {
@@ -379,7 +383,7 @@ function startLobbyPoll() {
         const r = res.data;
         fillLobby(r);
         // Auto-start when all players are ready
-        const allReady = r.players.length >= 2 && r.players.every(p => p.isReady);
+        const allReady = r.players.length >= r.maxPlayers && r.players.every(p => p.isReady);
         if (allReady) { stopLobbyPoll(); enterGame(); }
     }, 2000);
 }
@@ -405,8 +409,7 @@ function enterGame() {
     if (!currentRoomId || !currentGameData) return;
     stopLobbyPoll();
 
-    const g      = currentGameData;
-    const wsUrl  = `ws://${location.host}/ws/relay?roomId=${currentRoomId}&token=${token}`;
+    const g       = currentGameData;
     const players = currentRoomData?.players || [];
 
     document.getElementById('ig-title').textContent = g.title;
@@ -414,17 +417,37 @@ function enterGame() {
         `<div class="pslot"><strong>${p.fullName||p.username}</strong>${p.uid?`<code class="uid-code">${p.uid}</code>`:''}</div>`
     ).join('');
 
-    // Show loading spinner while iframe initialises
     const loading = document.getElementById('game-loading');
     if (loading) loading.classList.remove('hidden');
 
     const gameUrl = g.gameFileUrl || '/games/gomoku.html';
     const iframe  = document.getElementById('game-iframe');
     iframe.style.opacity = '0';
-    iframe.src   = gameUrl;
+    iframe.src = gameUrl;
     iframe.onload = () => {
         if (loading) loading.classList.add('hidden');
         iframe.style.opacity = '1';
+        // 不在这里发 OBG_INIT，等 gomoku.html 发来 OBG_READY 再发
+    };
+
+    window.removeEventListener('message', onGameMessage);
+    window.addEventListener('message', onGameMessage);
+
+    document.getElementById('psb').style.display = 'none';
+    document.querySelector('#s-player .topbar').style.display = 'none';
+    document.getElementById('pma').style.padding = '0';
+    showP('ps-ingame');
+}
+
+function onGameMessage(event) {
+    const msg = event.data;
+    if (!msg || typeof msg !== 'object') return;
+
+    if (msg.type === 'OBG_READY') {
+        const proto  = location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl  = `${proto}://${location.host}/ws/relay?roomId=${currentRoomId}&token=${token}`;
+        const players = currentRoomData?.players || [];
+        const iframe  = document.getElementById('game-iframe');
         iframe.contentWindow.postMessage({
             type:    'OBG_INIT',
             roomId:  String(currentRoomId),
@@ -437,22 +460,17 @@ function enterGame() {
                 isMe:     p.uid === currentUser.uid
             }))
         }, '*');
-    };
+        return;
+    }
 
-    window.removeEventListener('message', onGameMessage);
-    window.addEventListener('message', onGameMessage);
-
-    // Hide sidebar and topbar during gameplay to prevent accidental navigation
-    document.getElementById('psb').style.display = 'none';
-    document.querySelector('#s-player .topbar').style.display = 'none';
-    document.getElementById('pma').style.padding = '0';
-    ///
-    showP('ps-ingame');
-}
-
-function onGameMessage(event) {
-    const msg = event.data;
-    if (!msg || typeof msg !== 'object') return;
+    if (msg.type === 'OBG_ROOM_READY') {
+        const slots = document.getElementById('ig-slots');
+        if (slots && msg.players) {
+            slots.innerHTML = msg.players.map(p =>
+                `<div class="pslot"><strong>${p.name}</strong><code class="uid-code">${p.uid}</code></div>`
+            ).join('');
+        }
+    }
     if (msg.type === 'OBG_GAME_OVER') {
         window.removeEventListener('message', onGameMessage);
         showGameOverModal(msg.winner, msg.disconnected);
@@ -733,6 +751,7 @@ async function loadAdminDash() {
     document.getElementById('asactive').textContent = s.activeUsers ?? '—';
     document.getElementById('asrooms').textContent  = s.activeRooms ?? '—';
 
+     // Build tag → game count map for the pie chart
     const tc = {};
     (gr.data || []).forEach(g => (g.tags || []).forEach(t => {
         tc[t] = (tc[t] || 0) + 1;
@@ -746,7 +765,7 @@ const PIE_COLORS = [
     '#5aaa38', '#2980b9', '#e74c3c', '#f39c12', '#9b59b6',
     '#1abc9c', '#e67e22', '#34495e', '#e91e63', '#00bcd4'
 ];
-
+// Render a doughnut chart of games per tag
 function renderPie(tc) {
     const ctx = document.getElementById('piechart');
     if (!ctx) return;
@@ -840,6 +859,7 @@ function renderAdminGames(games) {
     ).join('');
 }
 
+// Live search for admin game table
 function asr_games(q) {
     const lq = q.toLowerCase();
     renderAdminGames(_ag.filter(g =>
@@ -848,6 +868,7 @@ function asr_games(q) {
     ));
 }
 
+// Open the "Add Game" modal with a blank form
 function openAddGameModal() {
     agTags = [];
     ['agtitle', 'agauth', 'agdur', 'agage', 'agplayers'].forEach(id => {
@@ -921,7 +942,7 @@ async function openEditGame(id) {
     renderTagSel('eg', egTags);
     openMod('m-editgame');
 }
-
+// Save changes from the edit-game modal; upload new files only if changed
 async function saveEditGame() {
     const id = document.getElementById('egidx').value;
 
@@ -959,12 +980,15 @@ async function saveEditGame() {
 
 async function delGame(id) {
     if (!confirm('Delete this game?')) return;
-    await api('DELETE', `/api/admin/games/${id}`);
+    const res = await api('DELETE', `/api/admin/games/${id}`);
+    if (!res.success) { toast(res.message || 'Delete failed', 'err'); return; }
     toast('Deleted.', 'info');
     await loadAdminGames();
 }
 
 /* ── Tag selector ── */
+// Render the tag pill selector and the list of selected tags.
+// prefix: 'ag' for add-game modal, 'eg' for edit-game modal
 function renderTagSel(prefix, selected) {
     document.getElementById(prefix + '-tag-sel').innerHTML = allTags.map(t =>
         `<span class="tsel-pill ${selected.includes(t.name) ? 'on' : ''}"
@@ -987,6 +1011,7 @@ function removeTag(p, name) {
     renderTagSel(p, a);
 }
 
+// Add a custom (free-text) tag not in the predefined list
 function addCustomTag(p) {
     const inp = document.getElementById(p + '-custom-tag');
     const val = inp.value.trim();
@@ -1066,6 +1091,7 @@ async function loadAdminTags() {
     ).join('');
 }
 
+// Open tag modal in Add mode (blank fields)
 function openAddTagModal() {
     document.getElementById('cat-edit-id').value    = '';
     document.getElementById('ncn').value             = '';
@@ -1074,6 +1100,7 @@ function openAddTagModal() {
     openMod('m-addcat');
 }
 
+// Open tag modal in Edit mode (pre-filled fields)
 function openEditTag(id, name, desc) {
     document.getElementById('cat-edit-id').value    = id;
     document.getElementById('ncn').value             = name;
@@ -1082,6 +1109,7 @@ function openEditTag(id, name, desc) {
     openMod('m-addcat');
 }
 
+// Create or update a tag depending on whether cat-edit-id is set
 async function saveCat() {
     const id   = document.getElementById('cat-edit-id').value;
     const name = v('ncn');
@@ -1105,6 +1133,7 @@ async function delTag(id) {
     await loadAdminTags();
 }
 
+// Admin password change (uses the same endpoint as player password change)
 async function adminChPw() {
     const o  = v('acpold');
     const n  = v('acpnew');
@@ -1122,6 +1151,7 @@ async function adminChPw() {
 }
 
 /* ── Utilities ── */
+// Preview a selected image file inside a given container element
 function prevCover(input, prevId) {
     const file = input.files[0];
     if (!file) return;
@@ -1143,4 +1173,5 @@ function rtc(edId, cmd, val) {
 }
 
 /* ── Init ── */
+// Resume an existing session or show the login screen
 if (token && currentUser) startApp(); else go('s-login');

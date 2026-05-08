@@ -7,10 +7,9 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 /**
- * 注册 WebSocket 路由。
- * /ws/relay — 通用游戏消息中继，所有游戏共用同一个端点。
- *             游戏文件通过 SDK 连接这个端点，平台负责转发消息。
- */
+* Register the WebSocket route.
+* /ws/relay - General game message relay, all games share the same endpoint.
+* The game files connect to this endpoint through the SDK, and the platform is responsible for forwarding the messages. */
 @Configuration
 @EnableWebSocket
 class WebSocketConfig(
@@ -19,6 +18,6 @@ class WebSocketConfig(
     override fun registerWebSocketHandlers(registry: WebSocketHandlerRegistry) {
         registry
             .addHandler(relayHandler, "/ws/relay")
-            .setAllowedOrigins("*")   // 本地开发允许所有来源；生产改为具体域名
+            .setAllowedOrigins("*")
     }
 }

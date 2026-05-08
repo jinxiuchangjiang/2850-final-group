@@ -38,7 +38,7 @@ data class Game(
     val createdAt: LocalDateTime = LocalDateTime.now(),
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 
-    // ✅ 改为真正的多对多关联，自动生成 game_tags 中间表
+    // Automatically generate the game_tags intermediate table
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "game_tags",
@@ -67,7 +67,7 @@ data class GameRoom(
     @Enumerated(EnumType.STRING) var privacy: RoomPrivacy = RoomPrivacy.PUBLIC,
     var passwordHash: String? = null,
     var maxPlayers: Int = 2,
-    // ✅ 删掉 currentPlayers — 改用 roomPlayerRepo.countByRoom_Id() 实时查询
+    // Use roomPlayerRepo.countByRoom_Id() to perform real-time query instead.
     @Enumerated(EnumType.STRING) var status: RoomStatus = RoomStatus.WAITING,
     val createdAt: LocalDateTime = LocalDateTime.now()
 )

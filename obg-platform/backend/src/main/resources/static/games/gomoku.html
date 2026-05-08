@@ -207,22 +207,27 @@ function handleMsg(msg) {
 
     case 'ROOM_READY': {
       startTimeMs = msg.startTimeMs || Date.now();
-      (msg.players || []).forEach((p, i) => { playerColors[p.uid] = i + 1; });
-      myColor       = playerColors[myUid] || 1;
-      gameStatus    = 'PLAYING';
-      currentPlayer = 1; // black goes first
+      const orderedPlayers = [...(msg.players || [])];
+      if (startTimeMs % 2 === 1) orderedPlayers.reverse();
+      orderedPlayers.forEach((p, i) => { playerColors[p.uid] = i + 1; });
+      myColor = playerColors[myUid] || 1;
+      gameStatus = 'PLAYING';
+      currentPlayer = 1;
 
-      Object.entries(playerColors).forEach(([uid, color]) => {
-        const p    = allPlayers.find(x => x.uid === uid);
-        const name = (p?.fullName || p?.username || uid) + (uid === myUid ? ' (You)' : '');
-        if (color === 1) document.getElementById('p1-name').textContent = name;
-        if (color === 2) document.getElementById('p2-name').textContent = name;
+
+      (msg.players || []).forEach(p => {
+        const color = playerColors[p.uid];
+        const label = p.name + (p.uid === myUid ? ' (You)' : '');
+        if (color === 1) document.getElementById('p1-name').textContent = label;
+        if (color === 2) document.getElementById('p2-name').textContent = label;
       });
 
       document.getElementById('resign-btn').style.display = '';
       updateTurnUI();
+      window.parent.postMessage({ type: 'OBG_ROOM_READY', players: msg.players }, '*');
       break;
     }
+
 
     case 'MOVE': {
       const { row, col, color, fromUid } = msg;
@@ -257,7 +262,11 @@ function handleMsg(msg) {
         iWon ? 'Your opponent resigned.' : 'You resigned.'
       );
       // Only the winner sends the game-over notification (avoid double recording)
-      if (iWon) notifyGameOver(winnerUid);
+      if (iWon) {
+        notifyGameOver(winnerUid);
+      } else {
+        window.parent.postMessage({ type: 'OBG_GAME_OVER', winner: winnerUid }, '*');
+      }
       break;
     }
 
@@ -432,8 +441,10 @@ function checkWin(row, col, color) {
 
 function boardFull() { return board.every(row => row.every(c => c !== 0)); }
 
-// Initialise
+// ----------------Initialise----------------------
 buildBoard();
+// Signal to the parent platform that this game page has finished loading and is ready
+window.parent.postMessage({ type: 'OBG_READY' }, '*');
 </script>
 </body>
 </html>
